@@ -1,34 +1,38 @@
 import React, { useState } from "react";
+import { generatePlot } from "./api";
 
 function App() {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [showChart, setShowChart] = useState(false);
   const [gptCode, setGptCode] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [error, setError] = useState("");
 
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     console.log("User Prompt:", prompt);
     setLoading(true);
-    setShowChart(false); // Hide chart while "loading"
+    setShowChart(false);
+    setError("");
+    setGptCode("");
+    setImageUrl("");
 
-    // Simulate backend work
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const data = await generatePlot(prompt);
+      console.log("Flask Response:", data);
+
+      setGptCode(data.code_used);
+      setImageUrl(`http://localhost:5000${data.image_url}`);
       setShowChart(true);
-      setGptCode(`# Simulated GPT Python code
-plt.figure(figsize=(10, 6))
-plt.scatter(df['AVG'], df['OPS'])
-plt.title('Cubs AVG vs OPS')
-plt.xlabel('Batting Average')
-plt.ylabel('On-base Plus Slugging')
-plt.savefig('static/plot.png')
-plt.close()
-      `);
-    }, 1000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,13 +55,20 @@ plt.close()
         {loading ? "Loading..." : "Generate Visualization"}
       </button>
 
-      {/* Placeholder chart */}
-      {showChart && (
+      {/* Error Message */}
+      {error && (
+        <div style={{ color: "red", marginTop: "20px" }}>
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+
+      {/* Render Chart */}
+      {showChart && imageUrl && (
         <div style={{ marginTop: "20px" }}>
           <h3>Generated Chart:</h3>
           <img
-            src="https://reactjs.org/logo-og.png" // temporary placeholder
-            alt="Placeholder Chart"
+            src={imageUrl}
+            alt="Cubs Chart"
             style={{ maxWidth: "80%", border: "1px solid #ccc" }}
           />
         </div>
