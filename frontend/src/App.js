@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { generatePlot } from "./api";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 function App() {
   const [prompt, setPrompt] = useState("");
@@ -8,7 +10,7 @@ function App() {
   const [gptCode, setGptCode] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState("");
-  const [showGptCode, setShowGptCode] = useState(false); // 🆕 Collapsible state
+  const [showGptCode, setShowGptCode] = useState(false); // 🆕
 
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
@@ -20,7 +22,7 @@ function App() {
     setError("");
     setGptCode("");
     setImageUrl("");
-    setShowGptCode(false); // Collapse GPT code on new request
+    setShowGptCode(false); // Collapse GPT panel on new request
 
     try {
       const data = await generatePlot(prompt);
@@ -111,19 +113,18 @@ function App() {
           </button>
 
           {showGptCode && (
-            <div
-              style={{
-                background: "#f5f5f5",
-                border: "1px solid #ccc",
-                padding: "10px",
+            <SyntaxHighlighter
+              language="python"
+              style={vscDarkPlus}
+              customStyle={{
                 borderRadius: "5px",
-                fontFamily: "monospace",
-                whiteSpace: "pre-wrap",
+                fontSize: "14px",
+                padding: "10px",
+                overflowX: "auto",
               }}
             >
-              <h3>GPT Generated Code:</h3>
-              <pre>{gptCode}</pre>
-            </div>
+              {gptCode.trim()}
+            </SyntaxHighlighter>
           )}
         </div>
       )}
