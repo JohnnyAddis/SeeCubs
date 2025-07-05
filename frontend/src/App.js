@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { generatePlot } from "./api";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { prism } from "react-syntax-highlighter/dist/esm/styles/prism"; // 🆕 Light theme
 
 function App() {
   const [prompt, setPrompt] = useState("");
@@ -10,7 +11,8 @@ function App() {
   const [gptCode, setGptCode] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState("");
-  const [showGptCode, setShowGptCode] = useState(false); // 🆕
+  const [showGptCode, setShowGptCode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true); // 🆕 Theme toggle
 
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
@@ -22,7 +24,7 @@ function App() {
     setError("");
     setGptCode("");
     setImageUrl("");
-    setShowGptCode(false); // Collapse GPT panel on new request
+    setShowGptCode(false);
 
     try {
       const data = await generatePlot(prompt);
@@ -112,10 +114,29 @@ function App() {
             {showGptCode ? "Hide GPT Code" : "Show GPT Code"}
           </button>
 
+          {/* Theme Toggle */}
+          {showGptCode && (
+            <div style={{ marginBottom: "10px" }}>
+              <button
+                type="button"
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                style={{
+                  padding: "5px 10px",
+                  backgroundColor: "#eee",
+                  border: "1px solid #ccc",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                }}
+              >
+                {isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              </button>
+            </div>
+          )}
+
           {showGptCode && (
             <SyntaxHighlighter
               language="python"
-              style={vscDarkPlus}
+              style={isDarkMode ? vscDarkPlus : prism} // 🆕 Dynamic theme
               customStyle={{
                 borderRadius: "5px",
                 fontSize: "14px",
