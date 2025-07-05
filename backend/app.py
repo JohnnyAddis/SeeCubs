@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # Use non-GUI backend for Matplotlib
 import matplotlib.pyplot as plt
 import os
 
