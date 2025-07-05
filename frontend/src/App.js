@@ -8,6 +8,7 @@ function App() {
   const [gptCode, setGptCode] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState("");
+  const [showGptCode, setShowGptCode] = useState(false); // 🆕 Collapsible state
 
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
@@ -19,6 +20,7 @@ function App() {
     setError("");
     setGptCode("");
     setImageUrl("");
+    setShowGptCode(false); // Collapse GPT code on new request
 
     try {
       const data = await generatePlot(prompt);
@@ -32,13 +34,13 @@ function App() {
     }
   };
 
-  // 🆕 Reset handler
   const handleReset = () => {
     setPrompt("");
     setShowChart(false);
     setGptCode("");
     setImageUrl("");
     setError("");
+    setShowGptCode(false);
   };
 
   return (
@@ -62,11 +64,10 @@ function App() {
         {loading ? "Loading..." : "Generate Visualization"}
       </button>
       {" "}
-      {/* 🆕 Reset Button */}
       <button
         type="button"
         onClick={handleReset}
-        disabled={loading} // Disable while loading
+        disabled={loading}
         style={{ marginTop: "10px", padding: "8px 16px", backgroundColor: "#ddd" }}
       >
         Reset
@@ -91,25 +92,39 @@ function App() {
         </div>
       )}
 
-      {/* GPT Code Debug Panel */}
+      {/* Collapsible GPT Code */}
       {gptCode && (
-        <div
-          style={{
-            marginTop: "20px",
-            textAlign: "left",
-            width: "80%",
-            marginLeft: "auto",
-            marginRight: "auto",
-            background: "#f5f5f5",
-            border: "1px solid #ccc",
-            padding: "10px",
-            borderRadius: "5px",
-            fontFamily: "monospace",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          <h3>GPT Generated Code:</h3>
-          <pre>{gptCode}</pre>
+        <div style={{ marginTop: "20px", width: "80%", margin: "0 auto" }}>
+          <button
+            type="button"
+            onClick={() => setShowGptCode(!showGptCode)}
+            style={{
+              padding: "6px 12px",
+              marginBottom: "10px",
+              backgroundColor: "#f5f5f5",
+              border: "1px solid #ccc",
+              borderRadius: "5px",
+              cursor: "pointer",
+            }}
+          >
+            {showGptCode ? "Hide GPT Code" : "Show GPT Code"}
+          </button>
+
+          {showGptCode && (
+            <div
+              style={{
+                background: "#f5f5f5",
+                border: "1px solid #ccc",
+                padding: "10px",
+                borderRadius: "5px",
+                fontFamily: "monospace",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              <h3>GPT Generated Code:</h3>
+              <pre>{gptCode}</pre>
+            </div>
+          )}
         </div>
       )}
     </div>
