@@ -14,7 +14,6 @@ function App() {
   };
 
   const handleSubmit = async () => {
-    console.log("User Prompt:", prompt);
     setLoading(true);
     setShowChart(false);
     setError("");
@@ -23,8 +22,6 @@ function App() {
 
     try {
       const data = await generatePlot(prompt);
-      console.log("Flask Response:", data);
-
       setGptCode(data.code_used);
       setImageUrl(`http://localhost:5000${data.image_url}`);
       setShowChart(true);
@@ -33,6 +30,15 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 🆕 Reset handler
+  const handleReset = () => {
+    setPrompt("");
+    setShowChart(false);
+    setGptCode("");
+    setImageUrl("");
+    setError("");
   };
 
   return (
@@ -48,11 +54,22 @@ function App() {
       />
       <br />
       <button
+        type="button"
         onClick={handleSubmit}
-        style={{ marginTop: "10px", padding: "8px 16px" }}
         disabled={loading}
+        style={{ marginTop: "10px", padding: "8px 16px" }}
       >
         {loading ? "Loading..." : "Generate Visualization"}
+      </button>
+      {" "}
+      {/* 🆕 Reset Button */}
+      <button
+        type="button"
+        onClick={handleReset}
+        disabled={loading} // Disable while loading
+        style={{ marginTop: "10px", padding: "8px 16px", backgroundColor: "#ddd" }}
+      >
+        Reset
       </button>
 
       {/* Error Message */}
