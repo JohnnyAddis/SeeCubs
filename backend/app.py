@@ -6,27 +6,44 @@ import matplotlib
 matplotlib.use('Agg')  # Use non-GUI backend for Matplotlib
 import matplotlib.pyplot as plt
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# ✅ Setup OpenAI client
+#  Setup OpenAI client
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Load static data once
 df = pd.read_csv("data/standard_batting.csv")
 
+#sandbox gpt code execution
+def safe_exec(gpt_code, df, plt):
+    safe_globals = {
+        "__builtins__": {},  # Block all built-in functions
+        "df": df,
+        "pd": pd,
+        "plt": plt,
+    }
+    safe_locals = {}
+
+    try:
+        exec(gpt_code, safe_globals, safe_locals)
+    except Exception as e:
+        raise RuntimeError(f"Error executing GPT code: {str(e)}")
+
 @app.route("/generate", methods=["POST", "OPTIONS"])
 def generate_plot():
     if request.method == "OPTIONS":
-        # CORS preflight request
+        # CORS preflight request 
         return jsonify({"message": "CORS preflight success"}), 200
 
     # Get prompt from frontend
     user_prompt = request.json.get("prompt")
     print("Received prompt:", user_prompt)
 
-    # ✅ Cubs-aware system message
+    #  Cubs-aware system message
     system_message = f"""
     You are a Chicago Cubs data analyst specializing in the 2025 season.
     You are analyzing **standard batting statistics** for the 2025 Cubs.
@@ -43,6 +60,7 @@ def generate_plot():
     - Save the chart as 'static/plot.png'.
 
     IMPORTANT:
+    - If the user asks for anything unrelated to Cubs data visualization, politely refuse.
     - Do NOT include import statements or plt.show().
     - Only provide Python code that starts with plt.figure() and ends with plt.savefig().
     """
@@ -70,8 +88,7 @@ def generate_plot():
 
         
         plt.close("all")
-        local_env = {"df": df, "pd": pd, "plt": plt}
-        exec(code, {}, local_env)
+        safe_exec(code, df, plt)
 
         return jsonify({
             "image_url": "/static/plot.png",
@@ -140,8 +157,7 @@ def refine_plot():
         print("Refined GPT Code:\n", refined_code)
 
         plt.close("all")
-        local_env = {"df": df, "pd": pd, "plt": plt}
-        exec(refined_code, {}, local_env)
+        safe_exec(refined_code, df, plt)
 
         return jsonify({
             "image_url": "/static/plot.png",
