@@ -13,7 +13,6 @@ function App() {
   const [error, setError] = useState("");
   const [showGptCode, setShowGptCode] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [refineMode, setRefineMode] = useState(false);
   const [refinementPrompt, setRefinementPrompt] = useState("");
 
   const handleInputChange = (event) => {
@@ -27,7 +26,7 @@ function App() {
     setImageUrl("");
     setError("");
     setShowGptCode(false);
-    setRefineMode(false);
+    setRefinementPrompt("");
 
     try {
       const response = await fetch("http://localhost:5000/generate", {
@@ -87,7 +86,6 @@ function App() {
     setImageUrl("");
     setError("");
     setShowGptCode(false);
-    setRefineMode(false);
     setRefinementPrompt("");
   };
 
@@ -171,52 +169,32 @@ function App() {
             Download Chart
           </button>
 
-          {/* Refine Chart Button */}
-          <div style={{ marginTop: "10px" }}>
+          {/* Refinement Input Box */}
+          <div style={{ marginTop: "15px" }}>
+            <input
+              type="text"
+              placeholder="e.g., Rotate x-axis labels 45 degrees"
+              value={refinementPrompt}
+              onChange={(e) => setRefinementPrompt(e.target.value)}
+              style={{ padding: "8px", width: "300px" }}
+            />
+            <br />
             <button
               type="button"
-              onClick={() => setRefineMode(!refineMode)}
+              onClick={handleRefineSubmit}
+              disabled={loading || refinementPrompt.trim() === ""}
               style={{
                 marginTop: "10px",
                 padding: "8px 16px",
-                backgroundColor: "#2196F3",
+                backgroundColor: "#f57c00",
                 color: "white",
                 borderRadius: "5px",
                 cursor: "pointer",
               }}
             >
-              {refineMode ? "Cancel Refinement" : "Refine Chart"}
+              {loading ? "Refining..." : "Submit Refinement"}
             </button>
           </div>
-
-          {/* Refinement Input Box */}
-          {refineMode && (
-            <div style={{ marginTop: "10px" }}>
-              <input
-                type="text"
-                placeholder="e.g., Rotate x-axis labels 45 degrees"
-                value={refinementPrompt}
-                onChange={(e) => setRefinementPrompt(e.target.value)}
-                style={{ padding: "8px", width: "300px" }}
-              />
-              <br />
-              <button
-                type="button"
-                onClick={handleRefineSubmit}
-                disabled={loading || refinementPrompt.trim() === ""}
-                style={{
-                  marginTop: "10px",
-                  padding: "8px 16px",
-                  backgroundColor: "#f57c00",
-                  color: "white",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                }}
-              >
-                {loading ? "Refining..." : "Submit Refinement"}
-              </button>
-            </div>
-          )}
         </div>
       )}
 
