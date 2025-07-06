@@ -4,6 +4,7 @@ import openai
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')  # Use non-GUI backend for Matplotlib
+
 import matplotlib.pyplot as plt
 import os
 
@@ -26,11 +27,22 @@ def generate_plot():
     print("Received prompt:", user_prompt)
 
     system_message = f"""
-You are a Python data analyst. The user will ask you to visualize data about the 2025 Chicago Cubs.
-You have access to a Pandas DataFrame called df with these columns: {list(df.columns)}.
-Write Python code using df, pandas, and matplotlib to create a plot and save it as 'static/plot.png'.
-DO NOT include import statements or anything outside the function. Just the raw plotting code.
-    """
+You are a Chicago Cubs data analyst specializing in the 2025 season.
+You are analyzing **standard batting statistics** for the 2025 Cubs.
+
+- The available columns in df are: {list(df.columns)}.
+- Only use these columns. Do NOT reference any column not in this list.
+- Based on the user's prompt, choose the most appropriate type of plot:
+    * Scatter plot for relationships
+    * Bar chart for categories
+    * Line chart for trends over time
+- Add clear axis labels and a descriptive title mentioning "2025 Chicago Cubs".
+- Save the chart as 'static/plot.png'.
+
+IMPORTANT: Do NOT include import statements or plt.show().
+Only provide Python code that starts with plt.figure() and ends with plt.savefig().
+"""
+
 
     try:
         # GPT generates Python code
