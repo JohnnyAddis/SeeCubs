@@ -29,7 +29,7 @@ function App() {
     try {
       const data = await generatePlot(prompt);
       setGptCode(data.code_used);
-      setImageUrl(`http://localhost:5000${data.image_url}`);
+      setImageUrl(`http://localhost:5000${data.image_url}?t=${new Date().getTime()}`);
       setShowChart(true);
     } catch (err) {
       setError(err.message);
