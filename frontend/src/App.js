@@ -12,7 +12,9 @@ function App() {
   const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState("");
   const [showGptCode, setShowGptCode] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true); // For syntax highlighting theme
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [refineMode, setRefineMode] = useState(false);
+  const [refinementPrompt, setRefinementPrompt] = useState("");
 
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
@@ -24,16 +26,55 @@ function App() {
     setGptCode("");
     setImageUrl("");
     setError("");
-    setShowGptCode(false); // Collapse GPT panel on new request
+    setShowGptCode(false);
+    setRefineMode(false);
 
     try {
-      const data = await generatePlot(prompt);
-      setGptCode(data.code_used);
-      // Add timestamp to force image refresh
-      setImageUrl(`http://localhost:5000${data.image_url}?t=${new Date().getTime()}`);
-      setShowChart(true);
+      const response = await fetch("http://localhost:5000/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setGptCode(data.code_used);
+        setImageUrl(`http://localhost:5000${data.image_url}?t=${new Date().getTime()}`);
+        setShowChart(true);
+      } else {
+        setError(data.error || "An unknown error occurred.");
+      }
     } catch (err) {
-      setError(err.message);
+      setError("Failed to connect to the backend.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefineSubmit = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("http://localhost:5000/refine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          last_code: gptCode,
+          refinement: refinementPrompt,
+        }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setGptCode(data.code_used);
+        setImageUrl(`http://localhost:5000${data.image_url}?t=${new Date().getTime()}`);
+        setRefinementPrompt(""); // Clear refinement input
+      } else {
+        setError(data.error || "An unknown error occurred.");
+      }
+    } catch (err) {
+      setError("Failed to connect to the backend.");
     } finally {
       setLoading(false);
     }
@@ -46,6 +87,8 @@ function App() {
     setImageUrl("");
     setError("");
     setShowGptCode(false);
+    setRefineMode(false);
+    setRefinementPrompt("");
   };
 
   const handleDownloadChart = async () => {
@@ -110,7 +153,7 @@ function App() {
             style={{ maxWidth: "80%", border: "1px solid #ccc" }}
           />
           <br />
-          {/* Download Button */}
+          {/* Download Chart Button */}
           <button
             type="button"
             onClick={handleDownloadChart}
@@ -127,6 +170,53 @@ function App() {
           >
             Download Chart
           </button>
+
+          {/* Refine Chart Button */}
+          <div style={{ marginTop: "10px" }}>
+            <button
+              type="button"
+              onClick={() => setRefineMode(!refineMode)}
+              style={{
+                marginTop: "10px",
+                padding: "8px 16px",
+                backgroundColor: "#2196F3",
+                color: "white",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
+              {refineMode ? "Cancel Refinement" : "Refine Chart"}
+            </button>
+          </div>
+
+          {/* Refinement Input Box */}
+          {refineMode && (
+            <div style={{ marginTop: "10px" }}>
+              <input
+                type="text"
+                placeholder="e.g., Rotate x-axis labels 45 degrees"
+                value={refinementPrompt}
+                onChange={(e) => setRefinementPrompt(e.target.value)}
+                style={{ padding: "8px", width: "300px" }}
+              />
+              <br />
+              <button
+                type="button"
+                onClick={handleRefineSubmit}
+                disabled={loading || refinementPrompt.trim() === ""}
+                style={{
+                  marginTop: "10px",
+                  padding: "8px 16px",
+                  backgroundColor: "#f57c00",
+                  color: "white",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                }}
+              >
+                {loading ? "Refining..." : "Submit Refinement"}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -148,38 +238,39 @@ function App() {
             {showGptCode ? "Hide GPT Code" : "Show GPT Code"}
           </button>
 
-          {/* Theme Toggle */}
           {showGptCode && (
-            <div style={{ marginBottom: "10px" }}>
-              <button
-                type="button"
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                style={{
-                  padding: "5px 10px",
-                  backgroundColor: "#eee",
-                  border: "1px solid #ccc",
+            <>
+              {/* Theme Toggle */}
+              <div style={{ marginBottom: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  style={{
+                    padding: "5px 10px",
+                    backgroundColor: "#eee",
+                    border: "1px solid #ccc",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                  }}
+                >
+                  {isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                </button>
+              </div>
+
+              {/* Syntax Highlighted GPT Code */}
+              <SyntaxHighlighter
+                language="python"
+                style={isDarkMode ? vscDarkPlus : prism}
+                customStyle={{
                   borderRadius: "5px",
-                  cursor: "pointer",
+                  fontSize: "14px",
+                  padding: "10px",
+                  overflowX: "auto",
                 }}
               >
-                {isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              </button>
-            </div>
-          )}
-
-          {showGptCode && (
-            <SyntaxHighlighter
-              language="python"
-              style={isDarkMode ? vscDarkPlus : prism}
-              customStyle={{
-                borderRadius: "5px",
-                fontSize: "14px",
-                padding: "10px",
-                overflowX: "auto",
-              }}
-            >
-              {gptCode.trim()}
-            </SyntaxHighlighter>
+                {gptCode.trim()}
+              </SyntaxHighlighter>
+            </>
           )}
         </div>
       )}

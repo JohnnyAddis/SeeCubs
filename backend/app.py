@@ -48,7 +48,7 @@ def generate_plot():
     """
 
     try:
-        # 🧠 GPT generates Python code
+
         response = client.chat.completions.create(
             model="gpt-4-turbo",
             messages=[
@@ -60,7 +60,7 @@ def generate_plot():
 
         code = response.choices[0].message.content
 
-        # 🧹 Remove markdown fences
+        
         if code.startswith("```"):
             code = "\n".join(
                 line for line in code.splitlines() if not line.strip().startswith("```")
@@ -68,7 +68,7 @@ def generate_plot():
 
         print("GPT Generated Code:\n", code)
 
-        # 🧹 Reset Matplotlib and execute GPT code
+        
         plt.close("all")
         local_env = {"df": df, "pd": pd, "plt": plt}
         exec(code, {}, local_env)
@@ -79,19 +79,79 @@ def generate_plot():
         })
 
     except KeyError as ke:
-        # 🧠 Handle missing column error
+        # Handle missing column error
         print("Column error:", str(ke))
         return jsonify({
             "error": f"The dataset does not include column: {str(ke)}"
         }), 400
 
     except Exception as e:
-        # 🧠 Handle all other errors
+        
         print("Error during plot generation:", str(e))
         return jsonify({
             "error": f"An error occurred: {str(e)}. "
                      f"Make sure you're using column names from the dataset."
         }), 500
+@app.route("/refine", methods=["POST", "OPTIONS"])
+def refine_plot():
+    if request.method == "OPTIONS":
+        return jsonify({"message": "CORS preflight success"}), 200
 
+    last_code = request.json.get("last_code")
+    refinement_prompt = request.json.get("refinement")
+    print("Received refinement prompt:", refinement_prompt)
+
+    refine_system_message = """
+    You are a Python data visualization assistant.
+
+    Your task is to refine existing matplotlib chart code based on user feedback.
+
+    - ONLY make changes related to the user’s new instructions.
+    - DO NOT rewrite the entire script unless explicitly asked.
+    - Assume df is preloaded.
+    - Keep plt.figure() and plt.savefig() intact.
+    - Return only Python code, no explanations.
+    """
+
+    user_message = f"""
+    Here is the existing code:
+    ```python
+    {last_code}
+    User refinement instruction:
+    "{refinement_prompt}"
+    """
+    try:
+        response = client.chat.completions.create(
+        model="gpt-4-turbo",
+        messages=[
+            {"role": "system", "content": refine_system_message},
+            {"role": "user", "content": user_message},
+        ],
+        temperature=0.3,
+    )
+
+        refined_code = response.choices[0].message.content
+
+        if refined_code.startswith("```"):
+            refined_code = "\n".join(
+                line for line in refined_code.splitlines() if not line.strip().startswith("```")
+            )
+
+        print("Refined GPT Code:\n", refined_code)
+
+        plt.close("all")
+        local_env = {"df": df, "pd": pd, "plt": plt}
+        exec(refined_code, {}, local_env)
+
+        return jsonify({
+            "image_url": "/static/plot.png",
+            "code_used": refined_code
+        })
+
+    except Exception as e:
+        print("Error during refinement:", str(e))
+        return jsonify({
+            "error": f"An error occurred while refining the plot: {str(e)}"
+        }), 500
 if __name__ == "__main__":
     app.run(debug=True)
