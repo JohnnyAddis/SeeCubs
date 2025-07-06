@@ -15,8 +15,9 @@ CORS(app)  # Enable CORS for all routes
 #  Setup OpenAI client
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Load static data once
+# ✅ Load Cubs batting data once at startup
 df = pd.read_csv("data/standard_batting.csv")
+print("✅ Loaded Cubs batting data at startup.")
 
 #sandbox gpt code execution
 def safe_exec(gpt_code, df, plt):
