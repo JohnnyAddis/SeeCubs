@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { generatePlot } from "./api";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { prism } from "react-syntax-highlighter/dist/esm/styles/prism"; // 🆕 Light theme
+import { prism } from "react-syntax-highlighter/dist/esm/styles/prism"; // Light theme
 
 function App() {
   const [prompt, setPrompt] = useState("");
@@ -12,7 +12,7 @@ function App() {
   const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState("");
   const [showGptCode, setShowGptCode] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true); // 🆕 Theme toggle
+  const [isDarkMode, setIsDarkMode] = useState(true); // For syntax highlighting theme
 
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
@@ -21,14 +21,15 @@ function App() {
   const handleSubmit = async () => {
     setLoading(true);
     setShowChart(false);
-    setError("");
     setGptCode("");
     setImageUrl("");
-    setShowGptCode(false);
+    setError("");
+    setShowGptCode(false); // Collapse GPT panel on new request
 
     try {
       const data = await generatePlot(prompt);
       setGptCode(data.code_used);
+      // Add timestamp to force image refresh
       setImageUrl(`http://localhost:5000${data.image_url}?t=${new Date().getTime()}`);
       setShowChart(true);
     } catch (err) {
@@ -45,6 +46,21 @@ function App() {
     setImageUrl("");
     setError("");
     setShowGptCode(false);
+  };
+
+  const handleDownloadChart = async () => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = "cubs_chart.png";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
   };
 
   return (
@@ -93,6 +109,24 @@ function App() {
             alt="Cubs Chart"
             style={{ maxWidth: "80%", border: "1px solid #ccc" }}
           />
+          <br />
+          {/* Download Button */}
+          <button
+            type="button"
+            onClick={handleDownloadChart}
+            style={{
+              display: "inline-block",
+              marginTop: "10px",
+              padding: "8px 16px",
+              backgroundColor: "#4CAF50",
+              color: "white",
+              borderRadius: "5px",
+              textDecoration: "none",
+              cursor: "pointer",
+            }}
+          >
+            Download Chart
+          </button>
         </div>
       )}
 
@@ -136,7 +170,7 @@ function App() {
           {showGptCode && (
             <SyntaxHighlighter
               language="python"
-              style={isDarkMode ? vscDarkPlus : prism} // 🆕 Dynamic theme
+              style={isDarkMode ? vscDarkPlus : prism}
               customStyle={{
                 borderRadius: "5px",
                 fontSize: "14px",
